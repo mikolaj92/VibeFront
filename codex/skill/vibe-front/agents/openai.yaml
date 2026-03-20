@@ -1,0 +1,7 @@
+interface:
+  display_name: VibeFront
+  short_description: Enforce Basecoat-first FastAPI/Jinja2/HTMX UI.
+  default_prompt: Use $vibe-front for FastAPI, Jinja2, HTMX, and plain HTML UI work that should follow Basecoat primitives instead of custom utility-heavy markup.
+
+policy:
+  allow_implicit_invocation: true
