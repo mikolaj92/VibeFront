@@ -1,6 +1,6 @@
 ---
 name: vibe-front
-description: Enforce Basecoat-first UI generation for FastAPI, Jinja2, HTMX, and plain HTML apps that use CDN-hosted assets. Use this when creating or editing templates, layouts, cards, forms, tables, dialogs, tabs, sidebars, or HTMX fragments that should stay close to the calm, minimal Basecoat feel and avoid custom utility-heavy rebuilds.
+description: Enforce Basecoat-first UI generation for FastAPI, Jinja2, HTMX, Alpine.js, and plain HTML apps that use CDN-hosted assets. Use this when creating or editing templates, layouts, cards, forms, tables, dialogs, tabs, sidebars, or HTMX fragments that should stay close to the calm, minimal Basecoat feel and avoid custom utility-heavy rebuilds.
 ---
 
 # VibeFront
@@ -15,9 +15,17 @@ Default to this stack unless the user explicitly says otherwise:
 - HTMX
 - plain HTML
 - Basecoat UI from CDN
+- Alpine.js from CDN only when HTMX is not enough for light local UI state
 - no Node, no npm, no bundler, no React
 
-Use server-rendered templates first. Add JavaScript only when the interaction truly needs it, and prefer HTMX plus Basecoat's own scripts.
+Use server-rendered templates first.
+
+Interaction preference order:
+1. HTMX for server-driven interaction and partial updates
+2. Alpine.js for small local UI state when HTMX would be awkward or incomplete
+3. small amounts of plain JavaScript only when HTMX and Alpine.js are not a good fit
+
+Do not jump straight to custom JavaScript if HTMX or Alpine.js would solve the problem cleanly.
 
 ## Core rule: Basecoat first, always
 
@@ -77,6 +85,15 @@ Prefer short descriptions like `Recent work and status.`
 
 HTMX should swap the inner content region, not rebuild the whole page.
 
+Use HTMX first for server-dependent interaction such as:
+- request/response updates
+- partial swaps
+- forms
+- loading states tied to server responses
+- pagination
+- filtering
+- CRUD flows
+
 Rules:
 - `base.html` is the only full document shell.
 - Full pages extend `base.html`.
@@ -84,7 +101,53 @@ Rules:
 - HTMX fragments must not return `<html>`, `<body>`, a second layout wrapper, a second sidebar, or a second main app shell.
 - Put `hx-*` attributes on the Basecoat-compatible markup instead of wrapping the whole thing in custom containers.
 
-### 4. Exactly one canonical sidebar by default
+### 4. Interaction escalation order
+
+Prefer the lightest interaction layer that fits the job.
+
+Order:
+1. HTMX
+2. Alpine.js
+3. plain JavaScript
+
+Use HTMX for:
+- request/response interaction
+- partial swaps
+- forms
+- loading
+- pagination
+- filtering
+- CRUD flows
+- any interaction that depends on server-rendered HTML
+
+Use Alpine.js for small local UI state when no server round trip is needed, such as:
+- toggle state
+- dropdown open/close state
+- temporary disclosure
+- tabs when they are local, not server-driven
+- local modal open/close state
+
+Use plain JavaScript only when:
+- a browser API is required
+- the behavior is custom enough that HTMX or Alpine.js would be unnatural
+- HTMX and Alpine.js would make the solution more complex than the problem
+
+Rules:
+- prefer HTMX for interactions that depend on the server
+- prefer Alpine.js for small local state inside one component
+- prefer plain JavaScript only as the last layer
+- keep the implementation minimal, readable, and close to the markup
+- do not add Alpine.js if HTMX alone already solves the interaction
+- do not add plain JavaScript if HTMX or Alpine.js already solve the interaction
+- do not skip from HTMX straight to custom JavaScript when Alpine.js would cover the gap cleanly
+
+Decision examples:
+- submit a form and update a list -> HTMX
+- open or close a dropdown or modal without a server request -> Alpine.js
+- integrate with a browser API or handle unusual client-side behavior -> plain JavaScript
+- if HTMX already solves the interaction, stop there
+
+### 5. Exactly one canonical sidebar by default
 
 Unless the user explicitly asks for multiple sidebars, there is exactly one app sidebar.
 
@@ -127,7 +190,7 @@ Canonical pattern:
 </button>
 ```
 
-### 5. Basecoat over utility soup
+### 6. Basecoat over utility soup
 
 Bad:
 
@@ -263,16 +326,26 @@ Example fragment:
 For every UI task, follow this order:
 1. identify the Basecoat primitive first
 2. choose whether the output is a full page or an HTMX fragment
-3. write the simplest valid Jinja/HTML structure
-4. add HTMX attributes to that structure
-5. remove any custom wrappers or utility clutter that duplicate Basecoat
-6. verify there is still only one shell and one sidebar
+3. choose the lightest interaction layer that fits:
+   - HTMX first
+   - Alpine.js second
+   - plain JavaScript last
+4. write the simplest valid Jinja/HTML structure
+5. add HTMX attributes where server interaction is needed
+6. add Alpine.js only for small local state that HTMX should not own
+7. add plain JavaScript only when HTMX and Alpine.js are not a good fit
+8. remove any custom wrappers or utility clutter that duplicate Basecoat
+9. verify there is still only one shell and one sidebar
 
 ## Forbidden patterns
 
-Never do any of the following unless the user explicitly asks for it:
-- add React, Vue, Svelte, Alpine as a replacement for HTMX
+Alpine.js is allowed as a small local interaction layer. It is not the default, and it is not the architecture.
+
+Never do any of the following:
+- add React, Vue, or Svelte as a replacement for HTMX, Alpine.js, or server-rendered templates
 - add npm, Node, Vite, webpack, Tailwind config, or build tooling
+- use Alpine.js as a page-level framework or as a replacement for HTMX server flows
+- jump straight to plain JavaScript when HTMX or Alpine.js would solve the interaction cleanly
 - recreate cards, dialogs, sidebars, tabs, badges, or buttons from scratch when Basecoat already has them
 - return full HTML documents from HTMX endpoints
 - place a second sidebar inside swapped content
