@@ -4,6 +4,8 @@ Portable Basecoat-first frontend skill package for OpenCode and Codex.
 
 VibeFront is a reusable skill for FastAPI, Jinja2, HTMX, and plain HTML UI work where the result should stay close to the calm, minimal Basecoat feel instead of drifting into custom utility-heavy markup.
 
+Chrome pins come from the live [app-factory MANIFEST](https://github.com/mikolaj92/app-factory/blob/main/app_factory/assets/MANIFEST.json). The skill prefers the same-origin kit (`install_app_factory_ui`, `head_assets`, `product_shell`) over leftover jsDelivr/unpkg tags. Re-read that manifest before changing versions.
+
 ## What it installs
 
 - `.opencode/skills/vibe-front/` for OpenCode
@@ -35,8 +37,10 @@ If you already have the repo locally, you can run the platform installers direct
 
 By default the scripts install symlinks in:
 
-- `~/.config/opencode/skill/vibe-front`
+- `~/.config/opencode/skills/vibe-front`
 - `~/.codex/skills/vibe-front`
+
+OpenCode loads `~/.config/opencode/skills/*/SKILL.md` (plural). The installer also removes a leftover `~/.config/opencode/skill/vibe-front` symlink from older installs.
 
 You can override those roots with:
 
@@ -59,8 +63,10 @@ You can also override the stable checkout used by the one-liner installer with:
 ## What the skill enforces
 
 - Basecoat primitives first
+- same-origin app-factory chrome (MANIFEST-pinned Basecoat / HTMX / Alpine)
 - HTMX fragments instead of duplicated page shells
 - one canonical sidebar by default
+- no leftover CDN pins for core chrome
 - no React, Node, npm, or bundler creep
 - no utility-heavy rewrites when Basecoat already covers the UI
 
@@ -69,8 +75,9 @@ You can also override the stable checkout used by the one-liner installer with:
 After installation, confirm both targets exist:
 
 ```bash
-test -e "$HOME/.config/opencode/skill/vibe-front/SKILL.md"
+test -e "$HOME/.config/opencode/skills/vibe-front/SKILL.md"
 test -e "$HOME/.codex/skills/vibe-front/SKILL.md"
+./scripts/check_skill_pins.sh
 ```
 
 If a tool does not refresh the skill list automatically, restart it once after installation.

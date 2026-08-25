@@ -1,0 +1,14 @@
+name: Check skill pins
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  pins:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Align skill pins with live app-factory MANIFEST
+        run: ./scripts/check_skill_pins.sh
