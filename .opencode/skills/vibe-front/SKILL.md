@@ -1,6 +1,6 @@
 ---
 name: vibe-front
-description: Enforce Basecoat-first UI generation for FastAPI, Jinja2, HTMX, Alpine.js, and plain HTML apps that use CDN-hosted assets. Use this when creating or editing templates, layouts, cards, forms, tables, dialogs, tabs, sidebars, or HTMX fragments that should stay close to the calm, minimal Basecoat feel and avoid custom utility-heavy rebuilds.
+description: Enforce Basecoat-first UI generation for FastAPI, Jinja2, HTMX, Alpine.js, and plain HTML apps that use the app-factory same-origin kit. Use this when creating or editing templates, layouts, cards, forms, tables, dialogs, tabs, sidebars, or HTMX fragments that should stay close to the calm, minimal Basecoat feel and avoid custom utility-heavy rebuilds.
 ---
 
 # VibeFront
@@ -14,9 +14,11 @@ Default to this stack unless the user explicitly says otherwise:
 - Jinja2 templates
 - HTMX
 - plain HTML
-- Basecoat UI from CDN
-- Alpine.js from CDN only when HTMX is not enough for light local UI state
+- app-factory same-origin chrome (`install_app_factory_ui` + `head_assets` / `product_shell`)
+- Basecoat, HTMX, and Alpine versions from the live app-factory `MANIFEST.json` (not leftover CDN pins)
+- Alpine.js only when HTMX is not enough for light local UI state
 - no Node, no npm, no bundler, no React
+- no jsDelivr/unpkg tags for core chrome unless the user explicitly asks for a kit-free standalone HTML file
 
 Use server-rendered templates first.
 
@@ -226,6 +228,39 @@ Allowed utility classes are limited to simple layout glue such as:
 
 Do not use utilities to restyle the inside of an existing Basecoat component unless truly necessary.
 
+## Asset pin contract (app-factory MANIFEST)
+
+Do not invent chrome pins. Read the live kit manifest before writing `<link>` or `<script>` tags:
+
+https://raw.githubusercontent.com/mikolaj92/app-factory/main/app_factory/assets/MANIFEST.json
+
+Re-read that file. Do not reuse versions from this skill if the manifest has moved.
+
+Aligned pins at last check:
+- `basecoat-css` / `basecoat-js-all` **1.0.2** → `basecoat-factory.min.css`, `basecoat-js.min.js`
+- `htmx` **2.0.10** → `htmx.min.js`
+- `alpine` **3.15.12** → `alpine.min.js`
+
+Default delivery is **same-origin via the app-factory kit**, not jsDelivr/unpkg:
+
+1. Call `install_app_factory_ui(app, environments=[templates.env])` so `/static/platform` is mounted once.
+2. Full product pages extend `app_factory/product_shell.html` (or `app_factory/shell.html`).
+3. If the host already has a document shell, `{% include "app_factory/head_assets.html" %}`. Do not hand-roll core chrome tags.
+4. Same-origin URLs look like `/static/platform/htmx.min.js` via `platform_asset_url('htmx')`.
+
+This skill is **not** CDN-only. Leftover CDN pins (`basecoat-css@0.3.11`, `htmx.org@2.0.4`, jsDelivr/unpkg for core chrome) are forbidden.
+
+CDN exception: only when the user explicitly asks for a standalone HTML file with no Python/app-factory kit. Then still match the live MANIFEST versions:
+
+```html
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/basecoat-css@1.0.2/dist/basecoat.cdn.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.10"></script>
+<script src="https://cdn.jsdelivr.net/npm/alpinejs@3.15.12/dist/cdn.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/basecoat-css@1.0.2/dist/js/all.min.js" defer></script>
+```
+
+Do not keep the 0.3.x split (`basecoat.min.js` + `sidebar.min.js`). Basecoat 1.x ships one combined JS bundle (`basecoat-js-all` / `all.min.js`).
+
 ## Default project structure
 
 Prefer this structure unless the repo already has a clear equivalent:
@@ -242,7 +277,42 @@ templates/
 
 ## Base template guidance
 
-Use one outer shell in `base.html`.
+Prefer the kit shell. Do not fork a private document chrome or paste CDN tags.
+
+```html
+{% extends "app_factory/product_shell.html" %}
+
+{% block title %}Projects{% endblock %}
+
+{% block content %}
+<div class="grid gap-6">
+  <div class="card">
+    <header>
+      <h1>Projects</h1>
+      <p>Recent work and status.</p>
+    </header>
+    <section
+      hx-get="/projects/list"
+      hx-trigger="load"
+      hx-target="this"
+      hx-swap="innerHTML"
+    >
+      <p>Loading...</p>
+    </section>
+  </div>
+</div>
+{% endblock %}
+```
+
+If the host already has a document shell, include kit head assets instead of writing tags:
+
+```html
+{% include "app_factory/head_assets.html" %}
+```
+
+That emits same-origin Basecoat 1.0.2, HTMX 2.0.10, and Alpine 3.15.12 from `/static/platform`.
+
+Only if the host cannot mount app-factory yet, keep one outer shell and point at the same-origin kit files (still MANIFEST versions, still not CDN):
 
 ```html
 <!doctype html>
@@ -251,10 +321,10 @@ Use one outer shell in `base.html`.
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{% block title %}App{% endblock %}</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/basecoat-css@0.3.11/dist/basecoat.cdn.min.css" />
-    <script src="https://unpkg.com/htmx.org@2.0.4"></script>
-    <script src="https://cdn.jsdelivr.net/npm/basecoat-css@0.3.11/dist/js/basecoat.min.js" defer></script>
-    <script src="https://cdn.jsdelivr.net/npm/basecoat-css@0.3.11/dist/js/sidebar.min.js" defer></script>
+    <link rel="stylesheet" href="{{ platform_asset_url('basecoat-css') }}" />
+    <script src="{{ platform_asset_url('htmx') }}"></script>
+    <script src="{{ platform_asset_url('alpine') }}" defer></script>
+    <script src="{{ platform_asset_url('basecoat-js-all') }}" defer></script>
     {% block head %}{% endblock %}
   </head>
   <body>
@@ -270,8 +340,8 @@ Use one outer shell in `base.html`.
 ## Rendering rules for FastAPI + Jinja2
 
 ### Full page
-- extend `base.html`
-- fill the `page` block
+- prefer `app_factory/product_shell.html` (or a host `base.html` that includes `app_factory/head_assets.html`)
+- fill the `content` / `page` block
 - keep one page-level heading area
 - use Basecoat cards, forms, tables, and nav primitives directly
 
@@ -284,11 +354,11 @@ Use one outer shell in `base.html`.
 Example full page:
 
 ```html
-{% extends "base.html" %}
+{% extends "app_factory/product_shell.html" %}
 
 {% block title %}Projects{% endblock %}
 
-{% block page %}
+{% block content %}
 <div class="grid gap-6">
   <div class="card">
     <header>
@@ -342,6 +412,8 @@ For every UI task, follow this order:
 Alpine.js is allowed as a small local interaction layer. It is not the default, and it is not the architecture.
 
 Never do any of the following:
+- pin leftover CDN chrome (`basecoat-css@0.3.11`, `htmx.org@2.0.4`, jsDelivr/unpkg) instead of the app-factory same-origin kit
+- invent Basecoat/HTMX/Alpine versions instead of reading `app_factory/assets/MANIFEST.json`
 - add React, Vue, or Svelte as a replacement for HTMX, Alpine.js, or server-rendered templates
 - add npm, Node, Vite, webpack, Tailwind config, or build tooling
 - use Alpine.js as a page-level framework or as a replacement for HTMX server flows
