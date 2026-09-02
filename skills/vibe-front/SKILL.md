@@ -97,9 +97,9 @@ Use HTMX first for server-dependent interaction such as:
 - CRUD flows
 
 Rules:
-- `base.html` is the only full document shell.
-- Full pages extend `base.html`.
+- Full product pages extend `app_factory/product_shell.html`.
 - HTMX endpoints return fragments only.
+- HTMX fragments swap inside the kit-owned `#main-content` region.
 - HTMX fragments must not return `<html>`, `<body>`, a second layout wrapper, a second sidebar, or a second main app shell.
 - Put `hx-*` attributes on the Basecoat-compatible markup instead of wrapping the whole thing in custom containers.
 
@@ -149,48 +149,12 @@ Decision examples:
 - integrate with a browser API or handle unusual client-side behavior -> plain JavaScript
 - if HTMX already solves the interaction, stop there
 
-### 5. Exactly one canonical sidebar by default
+### 5. Use the kit-owned sidebar
 
-Unless the user explicitly asks for multiple sidebars, there is exactly one app sidebar.
-
-Rules:
-- Keep one stable sidebar id, such as `app-sidebar`.
-- Define sidebar markup once, usually in `base.html` or one included partial.
-- Do not duplicate sidebar markup in page templates.
-- Do not return sidebar markup from HTMX fragments.
-- HTMX swaps should normally target `#page-content`, not the sidebar.
-- Do not create multiple toggle mechanisms with different ids.
-
-Canonical pattern:
-
-```html
-<aside class="sidebar" id="app-sidebar" aria-hidden="true">
-  <nav>
-    <header>
-      <a href="/" class="font-medium">Workspace</a>
-    </header>
-    <section>
-      <ul>
-        <li><a href="/dashboard" aria-current="page">Dashboard</a></li>
-        <li><a href="/projects">Projects</a></li>
-        <li><a href="/settings">Settings</a></li>
-      </ul>
-    </section>
-  </nav>
-</aside>
-
-<main id="page-content">
-  {% block page %}{% endblock %}
-</main>
-
-<button
-  type="button"
-  aria-label="Toggle navigation"
-  onclick="document.dispatchEvent(new CustomEvent('basecoat:sidebar', { detail: { id: 'app-sidebar' } }))"
->
-  Menu
-</button>
-```
+`app_factory/product_shell.html` owns the product sidebar and the `#main-content` swap region.
+Do not copy sidebar markup, toggle events, ids, or a `partials/sidebar.html` into the host.
+Hosts may supply the documented app-factory sidebar extension blocks, but the chrome remains kit-owned.
+HTMX fragments contain only page content and never return sidebar markup.
 
 ### 6. Basecoat over utility soup
 
@@ -239,14 +203,27 @@ Re-read that file. Do not reuse versions from this skill if the manifest has mov
 Aligned pins at last check:
 - `basecoat-css` / `basecoat-js-all` **1.0.2** → `basecoat-factory.min.css`, `basecoat-js.min.js`
 - `htmx` **2.0.10** → `htmx.min.js`
-- `alpine` **3.15.12** → `alpine.min.js`
+- `alpine` **3.17.1** → `alpine.min.js`
 
 Default delivery is **same-origin via the app-factory kit**, not jsDelivr/unpkg:
 
-1. Call `install_app_factory_ui(app, environments=[templates.env])` so `/static/platform` is mounted once.
-2. Full product pages extend `app_factory/product_shell.html` (or `app_factory/shell.html`).
-3. If the host already has a document shell, `{% include "app_factory/head_assets.html" %}`. Do not hand-roll core chrome tags.
-4. Same-origin URLs look like `/static/platform/htmx.min.js` via `platform_asset_url('htmx')`.
+1. A chrome-only host calls `install_app_factory_ui(app, environments=[templates.env])` or the equivalent `install_platform(...)` composer so `/static/platform` is mounted once.
+2. A host with passkeys or user management calls `install_identity_adapters(...)` with the documented `PasskeyBinding` and `UserManagerBinding` values.
+3. Full product pages extend `app_factory/product_shell.html`.
+4. If the host already has a document shell, `{% include "app_factory/head_assets.html" %}`. Do not hand-roll core chrome tags.
+5. Same-origin URLs look like `/static/platform/htmx.min.js` via `platform_asset_url('htmx')`.
+
+Do not copy `install_passkey_ui`, `install_usermanager_ui`, session parsing, or identity route glue into a host. The adapter composer owns that neutral integration; the host supplies persistence, paths, page context, and product policy only.
+
+### Host dependency BOM
+
+When the generated product is a FastAPI host, pin one complete immutable git-tag row from app-factory `COMPAT.md`:
+
+| app-factory | my-auth | my-usermanager |
+| --- | --- | --- |
+| `v0.6.16` | `v0.4.8` | `v0.5.11` |
+
+Re-read `COMPAT.md` before generating dependencies and use its current preferred row if it has moved. Never use `path = "../…"`, `branch = "main"`, or floating revisions. Never mix a my-auth `0.5.x` generation with a BOM row that requires my-auth `0.4.x`.
 
 This skill is **not** CDN-only. Leftover CDN pins (`basecoat-css@0.3.11`, `htmx.org@2.0.4`, jsDelivr/unpkg for core chrome) are forbidden.
 
@@ -255,7 +232,7 @@ CDN exception: only when the user explicitly asks for a standalone HTML file wit
 ```html
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/basecoat-css@1.0.2/dist/basecoat.cdn.min.css" />
 <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.10"></script>
-<script src="https://cdn.jsdelivr.net/npm/alpinejs@3.15.12/dist/cdn.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/alpinejs@3.17.1/dist/cdn.min.js" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/basecoat-css@1.0.2/dist/js/all.min.js" defer></script>
 ```
 
@@ -263,14 +240,12 @@ Do not keep the 0.3.x split (`basecoat.min.js` + `sidebar.min.js`). Basecoat 1.x
 
 ## Default project structure
 
-Prefer this structure unless the repo already has a clear equivalent:
+Use the host's existing structure. For a new FastAPI host, keep product templates small because app-factory owns the document shell and sidebar:
 
 ```text
 templates/
-  base.html
   dashboard.html
   partials/
-    sidebar.html
     flash.html
     dashboard_table.html
 ```
@@ -294,7 +269,7 @@ Prefer the kit shell. Do not fork a private document chrome or paste CDN tags.
     <section
       hx-get="/projects/list"
       hx-trigger="load"
-      hx-target="this"
+      hx-target="#main-content"
       hx-swap="innerHTML"
     >
       <p>Loading...</p>
@@ -310,37 +285,14 @@ If the host already has a document shell, include kit head assets instead of wri
 {% include "app_factory/head_assets.html" %}
 ```
 
-That emits same-origin Basecoat 1.0.2, HTMX 2.0.10, and Alpine 3.15.12 from `/static/platform`.
+That emits same-origin Basecoat 1.0.2, HTMX 2.0.10, and Alpine 3.17.1 from `/static/platform`.
 
-Only if the host cannot mount app-factory yet, keep one outer shell and point at the same-origin kit files (still MANIFEST versions, still not CDN):
-
-```html
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>{% block title %}App{% endblock %}</title>
-    <link rel="stylesheet" href="{{ platform_asset_url('basecoat-css') }}" />
-    <script src="{{ platform_asset_url('htmx') }}"></script>
-    <script src="{{ platform_asset_url('alpine') }}" defer></script>
-    <script src="{{ platform_asset_url('basecoat-js-all') }}" defer></script>
-    {% block head %}{% endblock %}
-  </head>
-  <body>
-    {% include "partials/sidebar.html" %}
-    <main id="page-content">
-      {% block page %}{% endblock %}
-    </main>
-    {% block scripts %}{% endblock %}
-  </body>
-</html>
-```
+If the host cannot mount app-factory, fail the FastAPI chrome task explicitly instead of creating a private parallel shell. The CDN exception above remains only for an explicitly requested standalone HTML artifact.
 
 ## Rendering rules for FastAPI + Jinja2
 
 ### Full page
-- prefer `app_factory/product_shell.html` (or a host `base.html` that includes `app_factory/head_assets.html`)
+- extend `app_factory/product_shell.html`
 - fill the `content` / `page` block
 - keep one page-level heading area
 - use Basecoat cards, forms, tables, and nav primitives directly
@@ -368,7 +320,7 @@ Example full page:
     <section
       hx-get="/projects/list"
       hx-trigger="load"
-      hx-target="this"
+      hx-target="#main-content"
       hx-swap="innerHTML"
     >
       <p>Loading...</p>
@@ -427,10 +379,8 @@ Never do any of the following:
 
 ## Output expectations
 
-When generating code, prefer delivering concrete template files or patches such as:
-- `templates/base.html`
+When generating code, prefer delivering concrete product template files or patches such as:
 - `templates/dashboard.html`
-- `templates/partials/sidebar.html`
 - `templates/partials/flash.html`
 - `templates/partials/dashboard_table.html`
 
