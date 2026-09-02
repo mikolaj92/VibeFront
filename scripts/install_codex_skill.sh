@@ -2,7 +2,7 @@
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "$0")/.." && pwd)"
-source_dir="$repo_root/codex/skill/vibe-front"
+source_dir="$repo_root/skills/vibe-front"
 base_dir="${CODEX_SKILL_DIR:-$HOME/.codex/skills}"
 target_dir="$base_dir/vibe-front"
 

@@ -8,8 +8,9 @@ Chrome pins come from the live [app-factory MANIFEST](https://github.com/mikolaj
 
 ## What it installs
 
-- `.opencode/skills/vibe-front/` for OpenCode
-- `codex/skill/vibe-front/` for Codex
+- one canonical payload in `skills/vibe-front/`
+- an OpenCode symlink to that payload
+- a Codex symlink to the same payload
 - shared install scripts for a stable per-user checkout
 
 ## Install
@@ -55,9 +56,8 @@ You can also override the stable checkout used by the one-liner installer with:
 
 ## Repo layout
 
-- `.opencode/skills/vibe-front/` - OpenCode skill payload
-- `codex/skill/vibe-front/` - Codex skill payload
-- `scripts/` - user-level install scripts
+- `skills/vibe-front/` - the only skill payload
+- `scripts/` - user-level installers linking that payload into each harness
 - `install.sh` - clone/update installer for GitHub installs
 
 ## What the skill enforces

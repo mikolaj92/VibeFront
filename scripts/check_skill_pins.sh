@@ -1,31 +1,31 @@
 #!/usr/bin/env bash
-# Fail if VibeFront skill pins drift from the live app-factory MANIFEST.
+# Fail if VibeFront skill pins or platform contracts drift.
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "$0")/.." && pwd)"
 manifest_url="${APP_FACTORY_MANIFEST_URL:-https://raw.githubusercontent.com/mikolaj92/app-factory/main/app_factory/assets/MANIFEST.json}"
-
-skill_files=(
-  "$repo_root/.opencode/skills/vibe-front/SKILL.md"
-  "$repo_root/codex/skill/vibe-front/SKILL.md"
-)
-prompt_files=(
-  "$repo_root/.opencode/skills/vibe-front/references/agent-paste-prompt.md"
-  "$repo_root/codex/skill/vibe-front/references/agent-paste-prompt.md"
-)
+bom_url="${APP_FACTORY_BOM_URL:-https://raw.githubusercontent.com/mikolaj92/app-factory/main/bom/multi_user.toml}"
+skill_file="$repo_root/skills/vibe-front/SKILL.md"
+prompt_file="$repo_root/skills/vibe-front/references/agent-paste-prompt.md"
 
 tmp="$(mktemp)"
-trap 'rm -f "$tmp"' EXIT
+bom_tmp="$(mktemp)"
+trap 'rm -f "$tmp" "$bom_tmp"' EXIT
 
 if ! curl -fsSL "$manifest_url" -o "$tmp"; then
   printf 'Failed to fetch live MANIFEST from %s\n' "$manifest_url" >&2
+  exit 1
+fi
+if ! curl -fsSL "$bom_url" -o "$bom_tmp"; then
+  printf 'Failed to fetch live host BOM from %s\n' "$bom_url" >&2
   exit 1
 fi
 
 read -r basecoat_version htmx_version alpine_version css_filename js_filename htmx_filename alpine_filename < <(
   python3 - "$tmp" <<'PY'
 import json, sys
-manifest = json.load(open(sys.argv[1], encoding="utf-8"))
+with open(sys.argv[1], encoding="utf-8") as manifest_file:
+    manifest = json.load(manifest_file)
 print(
     manifest["basecoat-css"]["version"],
     manifest["htmx"]["version"],
@@ -43,71 +43,57 @@ PY
 printf 'Live app-factory MANIFEST: basecoat %s, htmx %s, alpine %s\n' \
   "$basecoat_version" "$htmx_version" "$alpine_version"
 
-fail=0
+read -r app_factory_version my_auth_version my_usermanager_version < <(
+  python3 - "$bom_tmp" <<'PY'
+import sys, tomllib
+with open(sys.argv[1], "rb") as bom_file:
+    pins = tomllib.load(bom_file)["pins"]
+print(pins["app-factory"], pins["my-auth"], pins["my-usermanager"])
+PY
+)
+printf 'Live host BOM: app-factory %s, my-auth %s, my-usermanager %s\n' \
+  "$app_factory_version" "$my_auth_version" "$my_usermanager_version"
 
+fail=0
 require_text() {
-  local file="$1"
-  local needle="$2"
+  local file="$1" needle="$2"
   if ! grep -Fq "$needle" "$file"; then
     printf 'Missing %s in %s\n' "$needle" "${file#"$repo_root"/}" >&2
     fail=1
   fi
 }
-
 forbid_text() {
-  local file="$1"
-  local needle="$2"
+  local file="$1" needle="$2"
   if grep -Fq "$needle" "$file"; then
-    printf 'Forbidden leftover pin %s in %s\n' "$needle" "${file#"$repo_root"/}" >&2
+    printf 'Forbidden text %s in %s\n' "$needle" "${file#"$repo_root"/}" >&2
     fail=1
   fi
 }
 
-if ! diff -q "${skill_files[0]}" "${skill_files[1]}" >/dev/null; then
-  printf 'OpenCode and Codex SKILL.md copies drifted apart\n' >&2
-  fail=1
-fi
-
-if ! diff -q "${prompt_files[0]}" "${prompt_files[1]}" >/dev/null; then
-  printf 'OpenCode and Codex agent-paste-prompt.md copies drifted apart\n' >&2
-  fail=1
-fi
-
-for file in "${skill_files[@]}"; do
-  require_text "$file" "$basecoat_version"
-  require_text "$file" "$htmx_version"
-  require_text "$file" "$alpine_version"
-  require_text "$file" "$css_filename"
-  require_text "$file" "$js_filename"
-  require_text "$file" "$htmx_filename"
-  require_text "$file" "$alpine_filename"
-  require_text "$file" "platform_asset_url"
-  require_text "$file" "app_factory/head_assets.html"
-  require_text "$file" "app_factory/product_shell.html"
-  require_text "$file" "same-origin"
-  forbid_text "$file" "cdn.jsdelivr.net/npm/basecoat-css@0.3.11"
-  forbid_text "$file" "unpkg.com/htmx.org@2.0.4"
-  forbid_text "$file" "dist/js/sidebar.min.js"
+for needle in \
+  "$basecoat_version" "$htmx_version" "$alpine_version" \
+  "$css_filename" "$js_filename" "$htmx_filename" "$alpine_filename" \
+  platform_asset_url app_factory/head_assets.html app_factory/product_shell.html \
+  'hx-target="#main-content"' install_identity_adapters "$app_factory_version" "$my_auth_version" "$my_usermanager_version" same-origin; do
+  require_text "$skill_file" "$needle"
+done
+for needle in app-sidebar '#page-content' basecoat:sidebar 'cdn.jsdelivr.net/npm/basecoat-css@0.3.11' 'unpkg.com/htmx.org@2.0.4' 'dist/js/sidebar.min.js'; do
+  forbid_text "$skill_file" "$needle"
 done
 
-for file in "${prompt_files[@]}"; do
-  require_text "$file" "same-origin"
-  require_text "$file" "MANIFEST.json"
-  forbid_text "$file" "from CDN only"
-  forbid_text "$file" "cdn.jsdelivr.net/npm/basecoat-css@0.3.11"
-  forbid_text "$file" "unpkg.com/htmx.org@2.0.4"
+for needle in same-origin MANIFEST.json install_identity_adapters COMPAT.md '#main-content'; do
+  require_text "$prompt_file" "$needle"
+done
+for needle in 'from CDN only' 'cdn.jsdelivr.net/npm/basecoat-css@0.3.11' 'unpkg.com/htmx.org@2.0.4'; do
+  forbid_text "$prompt_file" "$needle"
 done
 
-require_text "$repo_root/README.md" "~/.config/opencode/skills/vibe-front"
-require_text "$repo_root/scripts/install_opencode_skill.sh" '$HOME/.config/opencode/skills'
-forbid_text "$repo_root/README.md" "~/.config/opencode/skill/vibe-front/SKILL.md"
-if grep -q 'OPENCODE_SKILL_DIR:-$HOME/.config/opencode/skill}' "$repo_root/scripts/install_opencode_skill.sh"; then
-  printf 'install_opencode_skill.sh still defaults to singular OpenCode skill path\n' >&2
-  fail=1
-fi
+require_text "$repo_root/README.md" '~/.config/opencode/skills/vibe-front'
+require_text "$repo_root/scripts/install_opencode_skill.sh" 'source_dir="$repo_root/skills/vibe-front"'
+require_text "$repo_root/scripts/install_codex_skill.sh" 'source_dir="$repo_root/skills/vibe-front"'
+forbid_text "$repo_root/README.md" '~/.config/opencode/skill/vibe-front/SKILL.md'
 
 if [ "$fail" -ne 0 ]; then
   exit 1
 fi
-
-printf 'Skill pins match live app-factory MANIFEST and same-origin kit contract.\n'
+printf 'Canonical skill matches the live kit, shell, identity, and BOM contracts.\n'
