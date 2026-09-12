@@ -80,8 +80,16 @@ done
 for needle in app-sidebar '#page-content' basecoat:sidebar 'cdn.jsdelivr.net/npm/basecoat-css@0.3.11' 'unpkg.com/htmx.org@2.0.4' 'dist/js/sidebar.min.js'; do
   forbid_text "$skill_file" "$needle"
 done
+# CDN exception must quote the live MANIFEST versions, not stale pins.
+for needle in \
+  "cdn.jsdelivr.net/npm/basecoat-css@$basecoat_version" \
+  "cdn.jsdelivr.net/npm/htmx.org@$htmx_version" \
+  "cdn.jsdelivr.net/npm/alpinejs@$alpine_version"; do
+  require_text "$skill_file" "$needle"
+done
 
-for needle in same-origin MANIFEST.json install_identity_adapters COMPAT.md '#main-content'; do
+for needle in same-origin MANIFEST.json install_identity_adapters COMPAT.md '#main-content' \
+  "$app_factory_version" "$my_auth_version" "$my_usermanager_version"; do
   require_text "$prompt_file" "$needle"
 done
 for needle in 'from CDN only' 'cdn.jsdelivr.net/npm/basecoat-css@0.3.11' 'unpkg.com/htmx.org@2.0.4'; do
