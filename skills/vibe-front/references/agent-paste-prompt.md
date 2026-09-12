@@ -8,7 +8,7 @@ Hard rules:
 - Prefer `app_factory/product_shell.html`; HTMX swaps target the kit-owned `#main-content`. Do not paste leftover CDN chrome or a private sidebar.
 - Chrome-only FastAPI: call `install_app_factory_ui` or `install_platform`. Passkey/user-management host: call `install_identity_adapters` with `PasskeyBinding` and `UserManagerBinding`.
 - Do not copy `install_passkey_ui`, `install_usermanager_ui`, session parsing, or identity route glue into the host.
-- Pin one immutable host BOM row from app-factory `COMPAT.md` (currently app-factory `v0.6.16`, my-auth `v0.4.8`, my-usermanager `v0.5.11`); never use a local path or floating branch.
+- Pin one immutable host BOM row from app-factory `COMPAT.md` (currently app-factory `v0.7.3`, my-auth `v0.5.6`, my-usermanager `v0.6.7`); never use a local path or floating branch.
 - Read Basecoat/HTMX/Alpine versions from app-factory `MANIFEST.json`. Do not reuse `basecoat-css@0.3.11` or `htmx.org@2.0.4`.
 - HTMX responses return fragments only, never a second shell or sidebar.
 - Match the calm, minimal feel of basecoatui.com.

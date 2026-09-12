@@ -202,8 +202,8 @@ Re-read that file. Do not reuse versions from this skill if the manifest has mov
 
 Aligned pins at last check:
 - `basecoat-css` / `basecoat-js-all` **1.0.2** → `basecoat-factory.min.css`, `basecoat-js.min.js`
-- `htmx` **2.0.10** → `htmx.min.js`
-- `alpine` **3.17.1** → `alpine.min.js`
+- `htmx` **4.0.0** → `htmx.min.js`
+- `alpine` **3.17.2** → `alpine.min.js`
 
 Default delivery is **same-origin via the app-factory kit**, not jsDelivr/unpkg:
 
@@ -221,7 +221,7 @@ When the generated product is a FastAPI host, pin one complete immutable git-tag
 
 | app-factory | my-auth | my-usermanager |
 | --- | --- | --- |
-| `v0.6.16` | `v0.4.8` | `v0.5.11` |
+| `v0.7.3` | `v0.5.6` | `v0.6.7` |
 
 Re-read `COMPAT.md` before generating dependencies and use its current preferred row if it has moved. Never use `path = "../…"`, `branch = "main"`, or floating revisions. Never mix a my-auth `0.5.x` generation with a BOM row that requires my-auth `0.4.x`.
 
@@ -231,8 +231,8 @@ CDN exception: only when the user explicitly asks for a standalone HTML file wit
 
 ```html
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/basecoat-css@1.0.2/dist/basecoat.cdn.min.css" />
-<script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.10"></script>
-<script src="https://cdn.jsdelivr.net/npm/alpinejs@3.17.1/dist/cdn.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/htmx.org@4.0.0"></script>
+<script src="https://cdn.jsdelivr.net/npm/alpinejs@3.17.2/dist/cdn.min.js" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/basecoat-css@1.0.2/dist/js/all.min.js" defer></script>
 ```
 
@@ -285,7 +285,7 @@ If the host already has a document shell, include kit head assets instead of wri
 {% include "app_factory/head_assets.html" %}
 ```
 
-That emits same-origin Basecoat 1.0.2, HTMX 2.0.10, and Alpine 3.17.1 from `/static/platform`.
+That emits same-origin Basecoat 1.0.2, HTMX 4.0.0, and Alpine 3.17.2 from `/static/platform`.
 
 If the host cannot mount app-factory, fail the FastAPI chrome task explicitly instead of creating a private parallel shell. The CDN exception above remains only for an explicitly requested standalone HTML artifact.
 
