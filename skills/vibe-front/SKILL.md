@@ -302,7 +302,7 @@ If the host cannot mount app-factory, fail the FastAPI chrome task explicitly in
 
 ### Full page
 - extend `app_factory/product_shell.html`
-- fill the `content` / `page` block
+- put full-page markup inside `{% block content %}`
 - keep one page-level heading area
 - use Basecoat cards, forms, tables, and nav primitives directly
 
