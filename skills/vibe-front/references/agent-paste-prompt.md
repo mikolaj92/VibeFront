@@ -5,7 +5,7 @@ Hard rules:
 - Do not invent custom components if Basecoat already has an equivalent.
 - Do not use utility-heavy Tailwind markup for cards, forms, tables, tabs, dialogs, badges, buttons, or sidebars.
 - Keep exactly one sidebar unless explicitly asked otherwise.
-- Prefer `app_factory/product_shell.html`; HTMX swaps target the kit-owned `#main-content`. Do not paste leftover CDN chrome or a private sidebar.
+- Prefer `app_factory/product_shell.html`. `hx-target="#main-content"` is an outer-chrome pattern: the kit sidebar nav sits outside `#main-content` and targets it. Content inside `#main-content` targets itself (`hx-target="this"`) or a nested fragment id. Do not paste leftover CDN chrome or a private sidebar.
 - Chrome-only FastAPI: call `install_app_factory_ui` or `install_platform`. Passkey/user-management host: call `install_identity_adapters` with `PasskeyBinding` and `UserManagerBinding`.
 - Do not copy `install_passkey_ui`, `install_usermanager_ui`, session parsing, or identity route glue into the host.
 - Pin one immutable host BOM row from app-factory `COMPAT.md` (currently app-factory `v0.7.3`, my-auth `v0.5.6`, my-usermanager `v0.6.7`); never use a local path or floating branch.
