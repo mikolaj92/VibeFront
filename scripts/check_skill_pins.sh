@@ -74,12 +74,26 @@ for needle in \
   "$basecoat_version" "$htmx_version" "$alpine_version" \
   "$css_filename" "$js_filename" "$htmx_filename" "$alpine_filename" \
   platform_asset_url app_factory/head_assets.html app_factory/product_shell.html \
-  'hx-target="#main-content"' install_identity_adapters "$app_factory_version" "$my_auth_version" "$my_usermanager_version" same-origin; do
+  install_identity_adapters "$app_factory_version" "$my_auth_version" "$my_usermanager_version" same-origin; do
   require_text "$skill_file" "$needle"
 done
 for needle in app-sidebar '#page-content' basecoat:sidebar 'cdn.jsdelivr.net/npm/basecoat-css@0.3.11' 'unpkg.com/htmx.org@2.0.4' 'dist/js/sidebar.min.js'; do
   forbid_text "$skill_file" "$needle"
 done
+# #main-content must be documented as the outer-chrome nav target, not as an
+# inner-section load target: an element inside #main-content swapping the whole
+# region destroys its own card. See issue #22.
+require_text "$skill_file" 'hx-target="#main-content"'
+require_text "$skill_file" 'hx-target="this"'
+# An inner element must never load-trigger a swap of #main-content: that
+# element renders inside #main-content and would erase its own card. See issue #22.
+# grep -F is line-based, so check the combined pattern on whitespace-normalized text.
+flat_skill="$(tr '\n' ' ' < "$skill_file" | tr -s ' ')"
+if printf '%s' "$flat_skill" | grep -Fq 'hx-trigger="load" hx-target="#main-content"' || \
+  printf '%s' "$flat_skill" | grep -Fq 'hx-target="#main-content" hx-trigger="load"'; then
+  printf 'Forbidden pattern hx-trigger=load combined with hx-target="#main-content" in %s\n' "${skill_file#"$repo_root"/}" >&2
+  fail=1
+fi
 # CDN exception must quote the live MANIFEST versions, not stale pins.
 for needle in \
   "cdn.jsdelivr.net/npm/basecoat-css@$basecoat_version" \

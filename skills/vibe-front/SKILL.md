@@ -100,6 +100,7 @@ Rules:
 - Full product pages extend `app_factory/product_shell.html`.
 - HTMX endpoints return fragments only.
 - HTMX fragments swap inside the kit-owned `#main-content` region.
+- `hx-target="#main-content"` belongs only on chrome outside that region, such as the kit sidebar nav. Content inside `#main-content` targets itself (`hx-target="this"`) or a nested fragment id, never the whole region it lives in.
 - HTMX fragments must not return `<html>`, `<body>`, a second layout wrapper, a second sidebar, or a second main app shell.
 - Put `hx-*` attributes on the Basecoat-compatible markup instead of wrapping the whole thing in custom containers.
 
@@ -155,6 +156,14 @@ Decision examples:
 Do not copy sidebar markup, toggle events, ids, or a `partials/sidebar.html` into the host.
 Hosts may supply the documented app-factory sidebar extension blocks, but the chrome remains kit-owned.
 HTMX fragments contain only page content and never return sidebar markup.
+
+A full swap of `#main-content` is an outer-chrome pattern: the kit sidebar nav sits outside `#main-content` and targets it directly.
+
+```html
+<li><a href="/projects" hx-get="/projects" hx-target="#main-content" hx-swap="innerHTML">Projects</a></li>
+```
+
+Content inside `#main-content` swaps smaller regions instead: its own section (`hx-target="this"`) or a nested fragment id.
 
 ### 6. Basecoat over utility soup
 
@@ -269,7 +278,7 @@ Prefer the kit shell. Do not fork a private document chrome or paste CDN tags.
     <section
       hx-get="/projects/list"
       hx-trigger="load"
-      hx-target="#main-content"
+      hx-target="this"
       hx-swap="innerHTML"
     >
       <p>Loading...</p>
@@ -320,7 +329,7 @@ Example full page:
     <section
       hx-get="/projects/list"
       hx-trigger="load"
-      hx-target="#main-content"
+      hx-target="this"
       hx-swap="innerHTML"
     >
       <p>Loading...</p>
