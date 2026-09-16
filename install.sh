@@ -20,10 +20,14 @@ mkdir -p "$(dirname "$install_dir")"
 if [ -d "$install_dir/.git" ]; then
   git -C "$install_dir" fetch origin "$repo_ref"
   git -C "$install_dir" checkout "$repo_ref"
-  git -C "$install_dir" pull --ff-only origin "$repo_ref"
+  if git -C "$install_dir" symbolic-ref --quiet --short HEAD >/dev/null; then
+    git -C "$install_dir" pull --ff-only origin "$repo_ref"
+  fi
 else
   rm -rf "$install_dir"
-  git clone --branch "$repo_ref" "$repo_url" "$install_dir"
+  git clone "$repo_url" "$install_dir"
+  git -C "$install_dir" fetch origin "$repo_ref"
+  git -C "$install_dir" checkout "$repo_ref"
 fi
 
 "$install_dir/scripts/install_opencode_skill.sh"
