@@ -2,6 +2,20 @@
 # Fail if VibeFront skill pins or platform contracts drift.
 set -euo pipefail
 
+if ! command -v python3 >/dev/null 2>&1; then
+  printf 'Python >=3.11 is required to check skill pins; python3 was not found in PATH.\n' >&2
+  exit 1
+fi
+
+python3 - <<'PY'
+import sys
+if sys.version_info < (3, 11):
+    raise SystemExit(
+        f"Python >=3.11 is required to check skill pins; found {sys.version.split()[0]}. "
+        "Put Python 3.11 or newer on PATH as python3."
+    )
+PY
+
 repo_root="$(cd "$(dirname "$0")/.." && pwd)"
 manifest_url="${APP_FACTORY_MANIFEST_URL:-https://raw.githubusercontent.com/mikolaj92/app-factory/main/app_factory/assets/MANIFEST.json}"
 bom_url="${APP_FACTORY_BOM_URL:-https://raw.githubusercontent.com/mikolaj92/app-factory/main/bom/multi_user.toml}"
@@ -21,11 +35,21 @@ if ! curl -fsSL "$bom_url" -o "$bom_tmp"; then
   exit 1
 fi
 
-read -r basecoat_version htmx_version alpine_version css_filename js_filename htmx_filename alpine_filename < <(
+manifest_values="$(
   python3 - "$tmp" <<'PY'
 import json, sys
-with open(sys.argv[1], encoding="utf-8") as manifest_file:
-    manifest = json.load(manifest_file)
+try:
+    with open(sys.argv[1], encoding="utf-8") as manifest_file:
+        manifest = json.load(manifest_file)
+    for asset in ("basecoat-css", "basecoat-js-all", "htmx", "alpine"):
+        for field in ("version", "filename"):
+            value = manifest[asset][field]
+            if not isinstance(value, str) or not value or any(c.isspace() for c in value):
+                raise ValueError(f"{asset}.{field} must be a nonempty string without whitespace")
+    if manifest["basecoat-css"]["version"] != manifest["basecoat-js-all"]["version"]:
+        raise ValueError("basecoat-css and basecoat-js-all versions diverged")
+except (OSError, ValueError, KeyError, TypeError) as error:
+    raise SystemExit(f"Invalid MANIFEST: {error}")
 print(
     manifest["basecoat-css"]["version"],
     manifest["htmx"]["version"],
@@ -35,22 +59,29 @@ print(
     manifest["htmx"]["filename"],
     manifest["alpine"]["filename"],
 )
-if manifest["basecoat-css"]["version"] != manifest["basecoat-js-all"]["version"]:
-    raise SystemExit("basecoat-css and basecoat-js-all versions diverged")
 PY
-)
+)"
+read -r basecoat_version htmx_version alpine_version css_filename js_filename htmx_filename alpine_filename <<< "$manifest_values"
 
 printf 'Live app-factory MANIFEST: basecoat %s, htmx %s, alpine %s\n' \
   "$basecoat_version" "$htmx_version" "$alpine_version"
 
-read -r app_factory_version my_auth_version my_usermanager_version < <(
+bom_values="$(
   python3 - "$bom_tmp" <<'PY'
 import sys, tomllib
-with open(sys.argv[1], "rb") as bom_file:
-    pins = tomllib.load(bom_file)["pins"]
+try:
+    with open(sys.argv[1], "rb") as bom_file:
+        pins = tomllib.load(bom_file)["pins"]
+    for package in ("app-factory", "my-auth", "my-usermanager"):
+        value = pins[package]
+        if not isinstance(value, str) or not value or any(c.isspace() for c in value):
+            raise ValueError(f"{package} pin must be a nonempty string without whitespace")
+except (OSError, ValueError, KeyError, TypeError) as error:
+    raise SystemExit(f"Invalid host BOM: {error}")
 print(pins["app-factory"], pins["my-auth"], pins["my-usermanager"])
 PY
-)
+)"
+read -r app_factory_version my_auth_version my_usermanager_version <<< "$bom_values"
 printf 'Live host BOM: app-factory %s, my-auth %s, my-usermanager %s\n' \
   "$app_factory_version" "$my_auth_version" "$my_usermanager_version"
 
