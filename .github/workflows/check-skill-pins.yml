@@ -17,6 +17,7 @@ jobs:
         shell: bash
         run: |
           python3 --version
+          python3 -c 'import sys; assert sys.version_info[:2] == (3, 9), sys.version'
           guard_dir=$(mktemp -d "$PWD/.python-guard.XXXXXX")
           trap 'rm -rf "$guard_dir"' EXIT
           printf '#!/bin/sh\nprintf "Unexpected download before Python validation\\n" >&2\nexit 99\n' > "$guard_dir/curl"
@@ -26,7 +27,16 @@ jobs:
           output=$(./scripts/check_skill_pins.sh 2>&1) || status=$?
           printf '%s\n' "$output"
           test "$status" -ne 0
-          grep -Fq 'Python >=3.11 is required' <<< "$output"
+          grep -Fq 'Python >=3.11 is required to check skill pins; found 3.9.' <<< "$output"
+          if grep -Eq 'Traceback|ModuleNotFoundError|Unexpected download' <<< "$output"; then
+            exit 1
+          fi
+          ln -s "$(command -v bash)" "$guard_dir/bash"
+          status=0
+          output=$(PATH="$guard_dir" ./scripts/check_skill_pins.sh 2>&1) || status=$?
+          printf '%s\n' "$output"
+          test "$status" -ne 0
+          grep -Fq 'python3 was not found in PATH' <<< "$output"
           if grep -Eq 'Traceback|ModuleNotFoundError|Unexpected download' <<< "$output"; then
             exit 1
           fi
