@@ -230,7 +230,7 @@ When the generated product is a FastAPI host, pin one complete immutable git-tag
 
 | app-factory | my-auth | my-usermanager |
 | --- | --- | --- |
-| `v0.7.3` | `v0.5.6` | `v0.6.7` |
+| `v0.7.9` | `v0.5.7` | `v0.6.10` |
 
 Re-read `COMPAT.md` before generating dependencies and use its current preferred row if it has moved. Never use `path = "../…"`, `branch = "main"`, or floating revisions. Never mix a my-auth `0.5.x` generation with a BOM row that requires my-auth `0.4.x`.
 
