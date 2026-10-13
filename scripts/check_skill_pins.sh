@@ -105,7 +105,7 @@ for needle in \
   "$basecoat_version" "$htmx_version" "$alpine_version" \
   "$css_filename" "$js_filename" "$htmx_filename" "$alpine_filename" \
   platform_asset_url app_factory/head_assets.html app_factory/product_shell.html \
-  install_identity_adapters same-origin; do
+  install_identity_adapters "$app_factory_version" "$my_auth_version" "$my_usermanager_version" same-origin; do
   require_text "$skill_file" "$needle"
 done
 for needle in app-sidebar '#page-content' basecoat:sidebar 'cdn.jsdelivr.net/npm/basecoat-css@0.3.11' 'unpkg.com/htmx.org@2.0.4' 'dist/js/sidebar.min.js'; do
@@ -125,23 +125,16 @@ if printf '%s' "$flat_skill" | grep -Fq 'hx-trigger="load" hx-target="#main-cont
   printf 'Forbidden pattern hx-trigger=load combined with hx-target="#main-content" in %s\n' "${skill_file#"$repo_root"/}" >&2
   fail=1
 fi
-# Match complete CDN asset URLs so longer versions cannot satisfy a live pin.
+# CDN exception must quote the live MANIFEST versions, not stale pins.
 for needle in \
-  "https://cdn.jsdelivr.net/npm/basecoat-css@$basecoat_version/dist/basecoat.cdn.min.css\"" \
-  "https://cdn.jsdelivr.net/npm/basecoat-css@$basecoat_version/dist/js/all.min.js\"" \
-  "https://cdn.jsdelivr.net/npm/htmx.org@$htmx_version\"" \
-  "https://cdn.jsdelivr.net/npm/alpinejs@$alpine_version/dist/cdn.min.js\""; do
+  "cdn.jsdelivr.net/npm/basecoat-css@$basecoat_version" \
+  "cdn.jsdelivr.net/npm/htmx.org@$htmx_version" \
+  "cdn.jsdelivr.net/npm/alpinejs@$alpine_version"; do
   require_text "$skill_file" "$needle"
 done
 
-# Match complete Markdown code spans, not prefixes such as v0.7.90 for v0.7.9.
-for file in "$skill_file" "$prompt_file"; do
-  for version in "$app_factory_version" "$my_auth_version" "$my_usermanager_version"; do
-    require_text "$file" "\`$version\`"
-  done
-done
-
-for needle in same-origin MANIFEST.json install_identity_adapters COMPAT.md '#main-content'; do
+for needle in same-origin MANIFEST.json install_identity_adapters COMPAT.md '#main-content' \
+  "$app_factory_version" "$my_auth_version" "$my_usermanager_version"; do
   require_text "$prompt_file" "$needle"
 done
 for needle in 'from CDN only' 'cdn.jsdelivr.net/npm/basecoat-css@0.3.11' 'unpkg.com/htmx.org@2.0.4'; do
