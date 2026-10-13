@@ -125,11 +125,11 @@ if printf '%s' "$flat_skill" | grep -Fq 'hx-trigger="load" hx-target="#main-cont
   printf 'Forbidden pattern hx-trigger=load combined with hx-target="#main-content" in %s\n' "${skill_file#"$repo_root"/}" >&2
   fail=1
 fi
-# CDN exception must quote the live MANIFEST versions, not stale pins.
+# Match complete CDN asset URLs so longer versions cannot satisfy a live pin.
 for needle in \
-  "cdn.jsdelivr.net/npm/basecoat-css@$basecoat_version" \
-  "cdn.jsdelivr.net/npm/htmx.org@$htmx_version" \
-  "cdn.jsdelivr.net/npm/alpinejs@$alpine_version"; do
+  "https://cdn.jsdelivr.net/npm/basecoat-css@$basecoat_version/dist/basecoat.cdn.min.css\"" \
+  "https://cdn.jsdelivr.net/npm/htmx.org@$htmx_version\"" \
+  "https://cdn.jsdelivr.net/npm/alpinejs@$alpine_version/dist/cdn.min.js\""; do
   require_text "$skill_file" "$needle"
 done
 
