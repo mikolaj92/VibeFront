@@ -2,6 +2,15 @@
 # Fail if VibeFront skill pins or platform contracts drift.
 set -euo pipefail
 
+python3 - <<'PY'
+import sys
+if sys.version_info < (3, 11):
+    raise SystemExit(
+        f"Python >=3.11 is required to check skill pins; found {sys.version.split()[0]}. "
+        "Put Python 3.11 or newer on PATH as python3."
+    )
+PY
+
 repo_root="$(cd "$(dirname "$0")/.." && pwd)"
 manifest_url="${APP_FACTORY_MANIFEST_URL:-https://raw.githubusercontent.com/mikolaj92/app-factory/main/app_factory/assets/MANIFEST.json}"
 bom_url="${APP_FACTORY_BOM_URL:-https://raw.githubusercontent.com/mikolaj92/app-factory/main/bom/multi_user.toml}"

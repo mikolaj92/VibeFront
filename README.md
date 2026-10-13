@@ -72,9 +72,15 @@ You can also override the stable checkout used by the one-liner installer with:
 
 ## Verify install
 
-After installation, confirm both targets exist:
+Pin verification requires Python >=3.11 (for the standard-library TOML parser).
+Install Python 3.11 or newer and make it available as `python3` in `PATH`.
+If needed, prepend its binary directory: `export PATH="/path/to/python3.11/bin:$PATH"`.
+That directory must contain `python3`; having only a `python3.11` command is not enough.
+
+From the VibeFront checkout, confirm the Python version and both installed targets:
 
 ```bash
+python3 --version # Must report Python 3.11 or newer.
 test -e "$HOME/.config/opencode/skills/vibe-front/SKILL.md"
 test -e "$HOME/.codex/skills/vibe-front/SKILL.md"
 ./scripts/check_skill_pins.sh
