@@ -35,7 +35,7 @@ if ! curl -fsSL "$bom_url" -o "$bom_tmp"; then
   exit 1
 fi
 
-read -r basecoat_version htmx_version alpine_version css_filename js_filename htmx_filename alpine_filename < <(
+manifest_values="$(
   python3 - "$tmp" <<'PY'
 import json, sys
 with open(sys.argv[1], encoding="utf-8") as manifest_file:
@@ -52,19 +52,21 @@ print(
 if manifest["basecoat-css"]["version"] != manifest["basecoat-js-all"]["version"]:
     raise SystemExit("basecoat-css and basecoat-js-all versions diverged")
 PY
-)
+)"
+read -r basecoat_version htmx_version alpine_version css_filename js_filename htmx_filename alpine_filename <<< "$manifest_values"
 
 printf 'Live app-factory MANIFEST: basecoat %s, htmx %s, alpine %s\n' \
   "$basecoat_version" "$htmx_version" "$alpine_version"
 
-read -r app_factory_version my_auth_version my_usermanager_version < <(
+bom_values="$(
   python3 - "$bom_tmp" <<'PY'
 import sys, tomllib
 with open(sys.argv[1], "rb") as bom_file:
     pins = tomllib.load(bom_file)["pins"]
 print(pins["app-factory"], pins["my-auth"], pins["my-usermanager"])
 PY
-)
+)"
+read -r app_factory_version my_auth_version my_usermanager_version <<< "$bom_values"
 printf 'Live host BOM: app-factory %s, my-auth %s, my-usermanager %s\n' \
   "$app_factory_version" "$my_auth_version" "$my_usermanager_version"
 
