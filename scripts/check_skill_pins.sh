@@ -105,7 +105,7 @@ for needle in \
   "$basecoat_version" "$htmx_version" "$alpine_version" \
   "$css_filename" "$js_filename" "$htmx_filename" "$alpine_filename" \
   platform_asset_url app_factory/head_assets.html app_factory/product_shell.html \
-  install_identity_adapters "$app_factory_version" "$my_auth_version" "$my_usermanager_version" same-origin; do
+  install_identity_adapters same-origin; do
   require_text "$skill_file" "$needle"
 done
 for needle in app-sidebar '#page-content' basecoat:sidebar 'cdn.jsdelivr.net/npm/basecoat-css@0.3.11' 'unpkg.com/htmx.org@2.0.4' 'dist/js/sidebar.min.js'; do
@@ -133,8 +133,14 @@ for needle in \
   require_text "$skill_file" "$needle"
 done
 
-for needle in same-origin MANIFEST.json install_identity_adapters COMPAT.md '#main-content' \
-  "$app_factory_version" "$my_auth_version" "$my_usermanager_version"; do
+# Match complete Markdown code spans, not prefixes such as v0.7.90 for v0.7.9.
+for file in "$skill_file" "$prompt_file"; do
+  for version in "$app_factory_version" "$my_auth_version" "$my_usermanager_version"; do
+    require_text "$file" "\`$version\`"
+  done
+done
+
+for needle in same-origin MANIFEST.json install_identity_adapters COMPAT.md '#main-content'; do
   require_text "$prompt_file" "$needle"
 done
 for needle in 'from CDN only' 'cdn.jsdelivr.net/npm/basecoat-css@0.3.11' 'unpkg.com/htmx.org@2.0.4'; do
