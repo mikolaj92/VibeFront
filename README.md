@@ -76,6 +76,7 @@ Pin verification requires Python >=3.11 (for the standard-library TOML parser).
 Install Python 3.11 or newer and make it available as `python3` in `PATH`.
 If needed, prepend its binary directory: `export PATH="/path/to/python3.11/bin:$PATH"`.
 That directory must contain `python3`; having only a `python3.11` command is not enough.
+The script rejects a missing or older `python3` before downloading manifests, without a Python traceback.
 
 From the VibeFront checkout, confirm the Python version and both installed targets:
 

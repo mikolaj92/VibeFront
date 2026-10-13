@@ -2,6 +2,11 @@
 # Fail if VibeFront skill pins or platform contracts drift.
 set -euo pipefail
 
+if ! command -v python3 >/dev/null 2>&1; then
+  printf 'Python >=3.11 is required to check skill pins; python3 was not found in PATH.\n' >&2
+  exit 1
+fi
+
 python3 - <<'PY'
 import sys
 if sys.version_info < (3, 11):
