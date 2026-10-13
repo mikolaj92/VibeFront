@@ -232,6 +232,27 @@ When the generated product is a FastAPI host, pin one complete immutable git-tag
 | --- | --- | --- |
 | `v0.7.9` | `v0.5.7` | `v0.6.10` |
 
+For a multi-user host, merge this BOM into its existing `pyproject.toml` and run `uv sync`:
+
+```toml
+dependencies = [
+  "app-factory[platform]",
+  "my-auth[fastapi-htmx]",
+  "my-usermanager[fastapi-htmx,myauth]",
+]
+
+[tool.uv]
+# Override the nested app-factory source only; my-usermanager pins my-auth.
+override-dependencies = ["app-factory[platform]"]
+
+[tool.uv.sources]
+app-factory = { git = "https://github.com/mikolaj92/app-factory", tag = "v0.7.9" }
+my-auth = { git = "https://github.com/mikolaj92/my-auth", tag = "v0.5.7" }
+my-usermanager = { git = "https://github.com/mikolaj92/my-usermanager", tag = "v0.6.10" }
+```
+
+Keep `dependencies` under the existing `[project]` table. Do not duplicate TOML tables.
+
 Re-read `COMPAT.md` before generating dependencies and use its current preferred row if it has moved. Never use `path = "../…"`, `branch = "main"`, or floating revisions. Never mix a my-auth `0.5.x` generation with a BOM row that requires my-auth `0.4.x`.
 
 This skill is **not** CDN-only. Leftover CDN pins (`basecoat-css@0.3.11`, `htmx.org@2.0.4`, jsDelivr/unpkg for core chrome) are forbidden.
