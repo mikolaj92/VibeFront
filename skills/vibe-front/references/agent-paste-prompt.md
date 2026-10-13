@@ -14,24 +14,6 @@ Hard rules:
 - Match the calm, minimal feel of basecoatui.com.
 - No React, no Node, no npm, no bundler.
 
-For a multi-user host, merge this BOM into the existing `pyproject.toml`, with `dependencies` under `[project]`, then run `uv sync`. Do not duplicate TOML tables or override my-auth.
-
-```toml
-dependencies = [
-  "app-factory[platform]",
-  "my-auth[fastapi-htmx]",
-  "my-usermanager[fastapi-htmx,myauth]",
-]
-
-[tool.uv]
-override-dependencies = ["app-factory[platform]"]
-
-[tool.uv.sources]
-app-factory = { git = "https://github.com/mikolaj92/app-factory", tag = "v0.7.9" }
-my-auth = { git = "https://github.com/mikolaj92/my-auth", tag = "v0.5.7" }
-my-usermanager = { git = "https://github.com/mikolaj92/my-usermanager", tag = "v0.6.10" }
-```
-
 Before writing code:
 1. identify the Basecoat primitive
 2. decide full page vs fragment

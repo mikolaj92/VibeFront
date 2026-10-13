@@ -139,19 +139,6 @@ for file in "$skill_file" "$prompt_file"; do
   for version in "$app_factory_version" "$my_auth_version" "$my_usermanager_version"; do
     require_text "$file" "\`$version\`"
   done
-  for source in \
-    "app-factory = { git = \"https://github.com/mikolaj92/app-factory\", tag = \"$app_factory_version\" }" \
-    "my-auth = { git = \"https://github.com/mikolaj92/my-auth\", tag = \"$my_auth_version\" }" \
-    "my-usermanager = { git = \"https://github.com/mikolaj92/my-usermanager\", tag = \"$my_usermanager_version\" }"; do
-    require_text "$file" "$source"
-    package="${source%% =*}"
-    while IFS= read -r example; do
-      if [ "$example" != "$source" ]; then
-        printf 'Host BOM installation source mismatch for %s in %s\n' "$package" "${file#"$repo_root"/}" >&2
-        fail=1
-      fi
-    done < <(grep -E "^${package} = " "$file")
-  done
 done
 
 for needle in same-origin MANIFEST.json install_identity_adapters COMPAT.md '#main-content'; do
