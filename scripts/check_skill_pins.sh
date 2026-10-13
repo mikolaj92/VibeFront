@@ -128,6 +128,7 @@ fi
 # Match complete CDN asset URLs so longer versions cannot satisfy a live pin.
 for needle in \
   "https://cdn.jsdelivr.net/npm/basecoat-css@$basecoat_version/dist/basecoat.cdn.min.css\"" \
+  "https://cdn.jsdelivr.net/npm/basecoat-css@$basecoat_version/dist/js/all.min.js\"" \
   "https://cdn.jsdelivr.net/npm/htmx.org@$htmx_version\"" \
   "https://cdn.jsdelivr.net/npm/alpinejs@$alpine_version/dist/cdn.min.js\""; do
   require_text "$skill_file" "$needle"
