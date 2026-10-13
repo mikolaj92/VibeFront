@@ -38,8 +38,18 @@ fi
 manifest_values="$(
   python3 - "$tmp" <<'PY'
 import json, sys
-with open(sys.argv[1], encoding="utf-8") as manifest_file:
-    manifest = json.load(manifest_file)
+try:
+    with open(sys.argv[1], encoding="utf-8") as manifest_file:
+        manifest = json.load(manifest_file)
+    for asset in ("basecoat-css", "basecoat-js-all", "htmx", "alpine"):
+        for field in ("version", "filename"):
+            value = manifest[asset][field]
+            if not isinstance(value, str) or not value or any(c.isspace() for c in value):
+                raise ValueError(f"{asset}.{field} must be a nonempty string without whitespace")
+    if manifest["basecoat-css"]["version"] != manifest["basecoat-js-all"]["version"]:
+        raise ValueError("basecoat-css and basecoat-js-all versions diverged")
+except (OSError, ValueError, KeyError, TypeError) as error:
+    raise SystemExit(f"Invalid MANIFEST: {error}")
 print(
     manifest["basecoat-css"]["version"],
     manifest["htmx"]["version"],
@@ -49,8 +59,6 @@ print(
     manifest["htmx"]["filename"],
     manifest["alpine"]["filename"],
 )
-if manifest["basecoat-css"]["version"] != manifest["basecoat-js-all"]["version"]:
-    raise SystemExit("basecoat-css and basecoat-js-all versions diverged")
 PY
 )"
 read -r basecoat_version htmx_version alpine_version css_filename js_filename htmx_filename alpine_filename <<< "$manifest_values"
@@ -61,8 +69,15 @@ printf 'Live app-factory MANIFEST: basecoat %s, htmx %s, alpine %s\n' \
 bom_values="$(
   python3 - "$bom_tmp" <<'PY'
 import sys, tomllib
-with open(sys.argv[1], "rb") as bom_file:
-    pins = tomllib.load(bom_file)["pins"]
+try:
+    with open(sys.argv[1], "rb") as bom_file:
+        pins = tomllib.load(bom_file)["pins"]
+    for package in ("app-factory", "my-auth", "my-usermanager"):
+        value = pins[package]
+        if not isinstance(value, str) or not value or any(c.isspace() for c in value):
+            raise ValueError(f"{package} pin must be a nonempty string without whitespace")
+except (OSError, ValueError, KeyError, TypeError) as error:
+    raise SystemExit(f"Invalid host BOM: {error}")
 print(pins["app-factory"], pins["my-auth"], pins["my-usermanager"])
 PY
 )"
