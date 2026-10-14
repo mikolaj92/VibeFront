@@ -232,7 +232,7 @@ When the generated product is a FastAPI host, pin one complete immutable git-tag
 | --- | --- | --- |
 | `v0.7.9` | `v0.5.7` | `v0.6.10` |
 
-Re-read `COMPAT.md` before generating dependencies and use its current preferred row if it has moved. Never use `path = "../…"`, `branch = "main"`, or floating revisions. Never mix a my-auth `0.5.x` generation with a BOM row that requires my-auth `0.4.x`.
+Re-read `COMPAT.md` before generating dependencies and use its current preferred row if it has moved. Never use `path = "../…"`, `branch = "main"`, or floating revisions. Never mix dependency versions from different COMPAT.md rows.
 
 This skill is **not** CDN-only. Leftover CDN pins (`basecoat-css@0.3.11`, `htmx.org@2.0.4`, jsDelivr/unpkg for core chrome) are forbidden.
 
