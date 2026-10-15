@@ -19,12 +19,14 @@ PY
 repo_root="$(cd "$(dirname "$0")/.." && pwd)"
 manifest_url="${APP_FACTORY_MANIFEST_URL:-https://raw.githubusercontent.com/mikolaj92/app-factory/main/app_factory/assets/MANIFEST.json}"
 bom_url="${APP_FACTORY_BOM_URL:-https://raw.githubusercontent.com/mikolaj92/app-factory/main/bom/multi_user.toml}"
+compat_url="https://raw.githubusercontent.com/mikolaj92/app-factory/main/COMPAT.md"
 skill_file="$repo_root/skills/vibe-front/SKILL.md"
 prompt_file="$repo_root/skills/vibe-front/references/agent-paste-prompt.md"
 
 tmp="$(mktemp)"
 bom_tmp="$(mktemp)"
-trap 'rm -f "$tmp" "$bom_tmp"' EXIT
+compat_tmp="$(mktemp)"
+trap 'rm -f "$tmp" "$bom_tmp" "$compat_tmp"' EXIT
 
 if ! curl -fsSL "$manifest_url" -o "$tmp"; then
   printf 'Failed to fetch live MANIFEST from %s\n' "$manifest_url" >&2
@@ -32,6 +34,11 @@ if ! curl -fsSL "$manifest_url" -o "$tmp"; then
 fi
 if ! curl -fsSL "$bom_url" -o "$bom_tmp"; then
   printf 'Failed to fetch live host BOM from %s\n' "$bom_url" >&2
+  exit 1
+fi
+
+if ! curl -fsSL "$compat_url" -o "$compat_tmp"; then
+  printf 'Failed to fetch live COMPAT from %s\n' "$compat_url" >&2
   exit 1
 fi
 
@@ -67,7 +74,7 @@ printf 'Live app-factory MANIFEST: basecoat %s, htmx %s, alpine %s\n' \
   "$basecoat_version" "$htmx_version" "$alpine_version"
 
 bom_values="$(
-  python3 - "$bom_tmp" <<'PY'
+  python3 - "$bom_tmp" "$compat_tmp" <<'PY'
 import sys, tomllib
 try:
     with open(sys.argv[1], "rb") as bom_file:
@@ -76,8 +83,19 @@ try:
         value = pins[package]
         if not isinstance(value, str) or not value or any(c.isspace() for c in value):
             raise ValueError(f"{package} pin must be a nonempty string without whitespace")
+    with open(sys.argv[2], encoding="utf-8") as compat_file:
+        current_rows = []
+        for line in compat_file:
+            cells = [cell.strip().strip("*" + chr(96)) for cell in line.strip().strip("|").split("|")]
+            if len(cells) == 4 and cells[3].startswith("Current"):
+                current_rows.append(cells[:3])
+    if len(current_rows) != 1:
+        raise ValueError("COMPAT.md must contain exactly one Current row")
+    expected = [pins[package] for package in ("app-factory", "my-auth", "my-usermanager")]
+    if current_rows[0] != expected:
+        raise ValueError(f"BOM/COMPAT.md pin mismatch: BOM {expected}, COMPAT {current_rows[0]}")
 except (OSError, ValueError, KeyError, TypeError) as error:
-    raise SystemExit(f"Invalid host BOM: {error}")
+    raise SystemExit(f"Invalid host BOM/COMPAT: {error}")
 print(pins["app-factory"], pins["my-auth"], pins["my-usermanager"])
 PY
 )"
