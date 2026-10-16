@@ -2,17 +2,18 @@
 # Fail if VibeFront skill pins or platform contracts drift.
 set -euo pipefail
 
-if ! command -v python3 >/dev/null 2>&1; then
-  printf 'Python >=3.11 is required to check skill pins; python3 was not found in PATH.\n' >&2
+python="${PYTHON:-python3}"
+if ! command -v "$python" >/dev/null 2>&1; then
+  printf 'Python >=3.11 is required to check skill pins; %s was not found in PATH.\n' "$python" >&2
   exit 1
 fi
 
-python3 - <<'PY'
+"$python" - <<'PY'
 import sys
 if sys.version_info < (3, 11):
     raise SystemExit(
         f"Python >=3.11 is required to check skill pins; found {sys.version.split()[0]}. "
-        "Put Python 3.11 or newer on PATH as python3."
+        "Put Python 3.11 or newer on PATH as python3 or select it with PYTHON."
     )
 PY
 
@@ -36,7 +37,7 @@ if ! curl -fsSL "$bom_url" -o "$bom_tmp"; then
 fi
 
 manifest_values="$(
-  python3 - "$tmp" <<'PY'
+  "$python" - "$tmp" <<'PY'
 import json, sys
 try:
     with open(sys.argv[1], encoding="utf-8") as manifest_file:
@@ -67,7 +68,7 @@ printf 'Live app-factory MANIFEST: basecoat %s, htmx %s, alpine %s\n' \
   "$basecoat_version" "$htmx_version" "$alpine_version"
 
 bom_values="$(
-  python3 - "$bom_tmp" <<'PY'
+  "$python" - "$bom_tmp" <<'PY'
 import sys, tomllib
 try:
     with open(sys.argv[1], "rb") as bom_file:
