@@ -88,8 +88,8 @@ printf 'Live host BOM: app-factory %s, my-auth %s, my-usermanager %s\n' \
 
 fail=0
 require_text() {
-  local file="$1" needle="$2"
-  if ! grep -Fq "$needle" "$file"; then
+  local file="$1" needle="$2" match_mode="${3:--Fq}"
+  if ! grep "$match_mode" "$needle" "$file"; then
     printf 'Missing %s in %s\n' "$needle" "${file#"$repo_root"/}" >&2
     fail=1
   fi
@@ -138,7 +138,7 @@ for needle in same-origin MANIFEST.json install_identity_adapters COMPAT.md '#ma
   "$app_factory_version" "$my_auth_version" "$my_usermanager_version"; do
   require_text "$prompt_file" "$needle"
 done
-require_text "$skill_file" "| \`$app_factory_version\` | \`$my_auth_version\` | \`$my_usermanager_version\` |"
+require_text "$skill_file" "| \`$app_factory_version\` | \`$my_auth_version\` | \`$my_usermanager_version\` |" -Fxq
 require_text "$prompt_file" "(currently app-factory \`$app_factory_version\`, my-auth \`$my_auth_version\`, my-usermanager \`$my_usermanager_version\`)"
 for needle in 'from CDN only' 'cdn.jsdelivr.net/npm/basecoat-css@0.3.11' 'unpkg.com/htmx.org@2.0.4'; do
   forbid_text "$prompt_file" "$needle"
