@@ -226,13 +226,13 @@ Do not copy `install_passkey_ui`, `install_usermanager_ui`, session parsing, or 
 
 ### Host dependency BOM
 
-When the generated product is a FastAPI host, pin one complete immutable git-tag row from app-factory `COMPAT.md`:
+When the generated product is a FastAPI host, pin the complete immutable git-tag row from app-factory `bom/multi_user.toml` and confirm it in `COMPAT.md`:
 
 | app-factory | my-auth | my-usermanager |
 | --- | --- | --- |
 | `v0.7.9` | `v0.5.7` | `v0.6.10` |
 
-Re-read `COMPAT.md` before generating dependencies and use its current preferred row if it has moved. Never use `path = "../…"`, `branch = "main"`, or floating revisions. Never mix dependency versions from different COMPAT.md rows.
+Re-read `bom/multi_user.toml` and `COMPAT.md` before generating dependencies and use the current BOM row if it has moved. Never use `path = "../…"`, `branch = "main"`, or floating revisions. Never mix dependency versions from different COMPAT.md rows.
 
 This skill is **not** CDN-only. Leftover CDN pins (`basecoat-css@0.3.11`, `htmx.org@2.0.4`, jsDelivr/unpkg for core chrome) are forbidden.
 

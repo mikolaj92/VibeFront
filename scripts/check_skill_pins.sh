@@ -2,17 +2,18 @@
 # Fail if VibeFront skill pins or platform contracts drift.
 set -euo pipefail
 
-if ! command -v python3 >/dev/null 2>&1; then
-  printf 'Python >=3.11 is required to check skill pins; python3 was not found in PATH.\n' >&2
+python="${PYTHON:-python3}"
+if ! command -v "$python" >/dev/null 2>&1; then
+  printf 'Python >=3.11 is required to check skill pins; %s was not found in PATH.\n' "$python" >&2
   exit 1
 fi
 
-python3 - <<'PY'
+"$python" - <<'PY'
 import sys
 if sys.version_info < (3, 11):
     raise SystemExit(
         f"Python >=3.11 is required to check skill pins; found {sys.version.split()[0]}. "
-        "Put Python 3.11 or newer on PATH as python3."
+        "Put Python 3.11 or newer on PATH as python3 or select it with PYTHON."
     )
 PY
 
@@ -36,7 +37,7 @@ if ! curl -fsSL "$bom_url" -o "$bom_tmp"; then
 fi
 
 manifest_values="$(
-  python3 - "$tmp" <<'PY'
+  "$python" - "$tmp" <<'PY'
 import json, sys
 try:
     with open(sys.argv[1], encoding="utf-8") as manifest_file:
@@ -67,7 +68,7 @@ printf 'Live app-factory MANIFEST: basecoat %s, htmx %s, alpine %s\n' \
   "$basecoat_version" "$htmx_version" "$alpine_version"
 
 bom_values="$(
-  python3 - "$bom_tmp" <<'PY'
+  "$python" - "$bom_tmp" <<'PY'
 import sys, tomllib
 try:
     with open(sys.argv[1], "rb") as bom_file:
@@ -87,8 +88,8 @@ printf 'Live host BOM: app-factory %s, my-auth %s, my-usermanager %s\n' \
 
 fail=0
 require_text() {
-  local file="$1" needle="$2"
-  if ! grep -Fq "$needle" "$file"; then
+  local file="$1" needle="$2" match_mode="${3:--Fq}"
+  if ! grep "$match_mode" "$needle" "$file"; then
     printf 'Missing %s in %s\n' "$needle" "${file#"$repo_root"/}" >&2
     fail=1
   fi
@@ -137,7 +138,7 @@ for needle in same-origin MANIFEST.json install_identity_adapters COMPAT.md '#ma
   "$app_factory_version" "$my_auth_version" "$my_usermanager_version"; do
   require_text "$prompt_file" "$needle"
 done
-require_text "$skill_file" "| \`$app_factory_version\` | \`$my_auth_version\` | \`$my_usermanager_version\` |"
+require_text "$skill_file" "| \`$app_factory_version\` | \`$my_auth_version\` | \`$my_usermanager_version\` |" -Fxq
 require_text "$prompt_file" "(currently app-factory \`$app_factory_version\`, my-auth \`$my_auth_version\`, my-usermanager \`$my_usermanager_version\`)"
 for needle in 'from CDN only' 'cdn.jsdelivr.net/npm/basecoat-css@0.3.11' 'unpkg.com/htmx.org@2.0.4'; do
   forbid_text "$prompt_file" "$needle"
