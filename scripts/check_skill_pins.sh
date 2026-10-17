@@ -134,6 +134,22 @@ for needle in \
   require_text "$skill_file" "$needle"
 done
 
+if ! "$python" - "$skill_file" "$basecoat_version" "$htmx_version" "$alpine_version" <<'PY'
+import pathlib, re, sys
+text = pathlib.Path(sys.argv[1]).read_text(encoding="utf-8")
+failed = False
+for package, version in zip(("basecoat-css", "htmx.org", "alpinejs"), sys.argv[2:]):
+    pattern = rf"cdn\.jsdelivr\.net/npm/{re.escape(package)}@([^/\s\"'<>`]+)"
+    for match in re.finditer(pattern, text):
+        if match[1] != version:
+            print(f"Stale CDN pin {match[0]}; expected {version}", file=sys.stderr)
+            failed = True
+sys.exit(1 if failed else 0)
+PY
+then
+  fail=1
+fi
+
 for needle in same-origin MANIFEST.json install_identity_adapters COMPAT.md '#main-content' \
   "$app_factory_version" "$my_auth_version" "$my_usermanager_version"; do
   require_text "$prompt_file" "$needle"
