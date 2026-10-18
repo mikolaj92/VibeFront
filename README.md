@@ -62,7 +62,7 @@ You can also override the stable checkout used by the one-liner installer with:
 
 ## What the skill enforces
 
-The [canonical skill](skills/vibe-front/SKILL.md) defines Basecoat-first markup, same-origin chrome, immutable dependency pins, and fragment rules.
+The [canonical skill](skills/vibe-front/SKILL.md) requires Basecoat primitives first, without utility-heavy rewrites; same-origin app-factory chrome using MANIFEST-pinned Basecoat / HTMX / Alpine, not leftover CDN pins; `app_factory/product_shell.html` ownership of `#sidebar` and `#main-content`, with no copied sidebar and content-only fragments; a complete immutable git-tag BOM row from `bom/multi_user.toml`, confirmed in `COMPAT.md`; `install_identity_adapters(...)` for hosts with passkeys or user management; and no React, Node, npm, or bundler.
 
 ## Verify install
 
