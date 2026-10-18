@@ -15,6 +15,13 @@ if sys.version_info < (3, 11):
         f"Python >=3.11 is required to check skill pins; found {sys.version.split()[0]}. "
         "Put Python 3.11 or newer on PATH as python3 or select it with PYTHON."
     )
+try:
+    import tomllib
+except ImportError:
+    raise SystemExit(
+        "Python with tomllib is required to check skill pins. "
+        "Select Python 3.11 or newer with tomllib using PYTHON."
+    ) from None
 PY
 
 repo_root="$(cd "$(dirname "$0")/.." && pwd)"
