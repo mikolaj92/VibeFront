@@ -63,10 +63,10 @@ You can also override the stable checkout used by the one-liner installer with:
 ## What the skill enforces
 
 - Basecoat primitives first
-- same-origin app-factory chrome (MANIFEST-pinned Basecoat / HTMX / Alpine)
-- HTMX fragments instead of duplicated page shells
-- one canonical sidebar by default
-- no leftover CDN pins for core chrome
+- same-origin app-factory chrome (MANIFEST-pinned Basecoat / HTMX / Alpine), not leftover CDN pins
+- `app_factory/product_shell.html` owns `#sidebar` and the HTMX swap region `#main-content`; hosts do not copy the sidebar, and fragments contain only page content
+- complete dependency BOM (app-factory, my-auth, my-usermanager), pinned to one immutable git-tag row from `bom/multi_user.toml` and confirmed in `COMPAT.md`
+- `install_identity_adapters(...)` for hosts with passkeys or user management
 - no React, Node, npm, or bundler creep
 - no utility-heavy rewrites when Basecoat already covers the UI
 
