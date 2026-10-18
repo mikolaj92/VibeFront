@@ -312,33 +312,6 @@ If the host cannot mount app-factory, fail the FastAPI chrome task explicitly in
 - do not return a second shell
 - do not return sidebar markup
 
-Example full page:
-
-```html
-{% extends "app_factory/product_shell.html" %}
-
-{% block title %}Projects{% endblock %}
-
-{% block content %}
-<div class="grid gap-6">
-  <div class="card">
-    <header>
-      <h1>Projects</h1>
-      <p>Recent work and status.</p>
-    </header>
-    <section
-      hx-get="/projects/list"
-      hx-trigger="load"
-      hx-target="this"
-      hx-swap="innerHTML"
-    >
-      <p>Loading...</p>
-    </section>
-  </div>
-</div>
-{% endblock %}
-```
-
 Example fragment:
 
 ```html

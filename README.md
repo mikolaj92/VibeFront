@@ -62,21 +62,13 @@ You can also override the stable checkout used by the one-liner installer with:
 
 ## What the skill enforces
 
-- Basecoat primitives first
-- same-origin app-factory chrome (MANIFEST-pinned Basecoat / HTMX / Alpine), not leftover CDN pins
-- `app_factory/product_shell.html` owns `#sidebar` and the HTMX swap region `#main-content`; hosts do not copy the sidebar, and fragments contain only page content
-- complete dependency BOM (app-factory, my-auth, my-usermanager), pinned to one immutable git-tag row from `bom/multi_user.toml` and confirmed in `COMPAT.md`
-- `install_identity_adapters(...)` for hosts with passkeys or user management
-- no React, Node, npm, or bundler creep
-- no utility-heavy rewrites when Basecoat already covers the UI
+The [canonical skill](skills/vibe-front/SKILL.md) defines Basecoat-first markup, same-origin chrome, immutable dependency pins, and fragment rules.
 
 ## Verify install
 
 Pin verification requires Python >=3.11 (for the standard-library TOML parser).
-Install Python 3.11 or newer and make it available as `python3` in `PATH`.
-If needed, prepend its binary directory: `export PATH="/path/to/python3.11/bin:$PATH"`.
-That directory must contain `python3`; having only a `python3.11` command is not enough.
-The script rejects a missing or older `python3` before downloading manifests, without a Python traceback.
+Make it available as `python3` in `PATH`, or run `PYTHON=python3.11 ./scripts/check_skill_pins.sh`.
+The script rejects a missing or unsupported interpreter before downloading manifests, without a Python traceback.
 
 From the VibeFront checkout, confirm the Python version and both installed targets:
 
