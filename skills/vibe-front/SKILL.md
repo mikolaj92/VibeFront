@@ -261,31 +261,7 @@ templates/
 
 ## Base template guidance
 
-If the host already has a document shell, include kit head assets instead of writing tags:
-
-```html
-{% include "app_factory/head_assets.html" %}
-```
-
-That emits same-origin Basecoat 1.0.2, HTMX 4.0.0, and Alpine 3.17.2 from `/static/platform`.
-
-If the host cannot mount app-factory, fail the FastAPI chrome task explicitly instead of creating a private parallel shell. The CDN exception above remains only for an explicitly requested standalone HTML artifact.
-
-## Rendering rules for FastAPI + Jinja2
-
-### Full page
-- extend `app_factory/product_shell.html`
-- put full-page markup inside `{% block content %}`
-- keep one page-level heading area
-- use Basecoat cards, forms, tables, and nav primitives directly
-
-### HTMX fragment
-- return only the fragment needed by the target
-- keep markup valid and minimal
-- do not return a second shell
-- do not return sidebar markup
-
-Example full page:
+Prefer the kit shell. Do not fork a private document chrome or paste CDN tags.
 
 ```html
 {% extends "app_factory/product_shell.html" %}
@@ -311,6 +287,30 @@ Example full page:
 </div>
 {% endblock %}
 ```
+
+If the host already has a document shell, include kit head assets instead of writing tags:
+
+```html
+{% include "app_factory/head_assets.html" %}
+```
+
+That emits same-origin Basecoat 1.0.2, HTMX 4.0.0, and Alpine 3.17.2 from `/static/platform`.
+
+If the host cannot mount app-factory, fail the FastAPI chrome task explicitly instead of creating a private parallel shell. The CDN exception above remains only for an explicitly requested standalone HTML artifact.
+
+## Rendering rules for FastAPI + Jinja2
+
+### Full page
+- extend `app_factory/product_shell.html`
+- put full-page markup inside `{% block content %}`
+- keep one page-level heading area
+- use Basecoat cards, forms, tables, and nav primitives directly
+
+### HTMX fragment
+- return only the fragment needed by the target
+- keep markup valid and minimal
+- do not return a second shell
+- do not return sidebar markup
 
 Example fragment:
 
